@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, abort, jsonify, render_template
+from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy #, or_
 from flask_cors import CORS
 import random
@@ -60,9 +60,27 @@ def all_books():
   #        Response body keys: 'success', 'created'(id of created book), 'books' and 'total_books'
   # TEST: When completed, you will be able to a new book using the form. Try doing so from the last page of books. 
   #       Your new book should show up immediately after you submit it at the end of the page.
-  #@app.route('/')
-  #def add_books():
-
+@app.route('/createbook', methods=['POST'])
+def add_book():
+  error = False
+  body = request.get_json()
+  try:
+    booktitle = body.get('booktitle', None)
+    bookauthor = body.get('bookauthor', None)
+    bookrating = body.get('bookrating', None)
+    book = Book(title=booktitle, author=bookauthor, rating=bookrating)
+    book.insert()
+    body['success'] = True
+    body['bookid'] = book.id
+    body['booktitle'] = book.title
+    body['bookauthor'] = book.author
+    body['bookrating'] = book.rating
+  except:
+    error = True
+  if error:
+    abort (422)
+  else:
+    return jsonify(body)
        
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'

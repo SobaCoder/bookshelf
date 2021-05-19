@@ -43,13 +43,17 @@
   <body>
     <div class="books-wrapper">      
       <h4>BOOKS </h4>
+      <form action="/createbook" method="POST" id="book-form">
+        <label for="booktitle">Create Book:</label>
+        <input id="booktitle" type="text" name="booktitle" placeholder="Book Title"  />
+        <input id="bookauthor" type="text" name="bookauthor" placeholder="Book Author"  />
+        <button type="submit">Create Book</button>
+      </form>
       <div id="error" class="hidden">
         An error occurred, please try again.
       </div>   
-        <ul id="books">
           {% for book in books %}
-          <li>
-          <table>
+          <table id="bookstable">
            <colgroup>
             <col span="1" style="width: 5%;">
             <col span="1" style="width: 70%;">
@@ -61,10 +65,7 @@
             <td>{{ book.title }}</td>
             <td>{{ book.author }}</td>
             <td><button class="delete-book" data-id="{{ book.id }}">&cross;</button></td>
-          </li>
           {% endfor %}
-        </ul>
-            
     </div>
 
     <script>
@@ -114,35 +115,14 @@
             });
         };
       }
-      deleteListBtns = document.querySelectorAll(".delete-list");
-      for (let i = 0; i < deleteListBtns.length; i++) {
-        const deleteBtn = deleteListBtns[i];
-        deleteBtn.onclick = function(e) {
-          console.log("Delete event: ", e);
-          const listId = e.target.dataset.id;
-
-          fetch('/lists/'+ listId + '/delete',{
-            method: 'DELETE'
-          }).then(function() {
-            console.log('Parent?', e.target);
-            const item = e.target.parentElement;
-            item.remove();
-              document.getElementById("error").className = "hidden";
-              window.location.reload(true);
-            })
-            .catch(function(e) {
-              console.error(e);
-              document.getElementById("error").className = "";
-            });
-        };
-      }
+      
       document.getElementById('book-form').onsubmit = function (e) {
         e.preventDefault();
-        fetch('/books/create', {
+        fetch('/createbook', {
             method: 'POST',
             body: JSON.stringify({
-                'description': document.getElementById('description').value,
-                'list_id': document.getElementById('list_id').value
+                'booktitle': document.getElementById('booktitle').value,
+                'bookauthor': document.getElementById('bookauthor').value
             }),
             headers: {
                 'Content-Type': 'application/json'
@@ -152,41 +132,15 @@
             return response.json();
         })
         .then(function (jsonResponse) {
-            const liItem = document.createElement('LI');
-
-            liItem.innerHTML = jsonResponse['description'];
-            document.getElementById('books').appendChild(liItem);
-            document.getElementById('error').className = 'hidden';
+            const tblrow = document.createElement('TR');
+            tblrow.insertCell(0).innerHTML = jsonResponse['bookid'];
+            tblrow.insertCell(1).innerHTML = jsonResponse['booktitle'];
+            tblrow.insertCell(2).innerHTML = jsonResponse['bookauthor'];
+            tblrow.insertCell(3).innerHTML = jsonResponse['bookrating'];
+            document.getElementById('bookstable').appendChild(tblrow);
             window.location.reload(true);
         })
         .catch(function () {
-            document.getElementById('error').className = '';
-        })
-      }
-      document.getElementById('list-form').onsubmit = function (e) {
-        e.preventDefault();
-
-        fetch('/lists/create', {
-            method: 'POST',
-            body: JSON.stringify({
-                'name': document.getElementById('todolist-input').value
-            }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (jsonResponse) {
-            const liItem = document.createElement('LI');
-
-            liItem.innerHTML = jsonResponse['name'];
-            document.getElementById('lists').appendChild(liItem);
-            document.getElementById('error').className = 'hidden';
-            window.location.reload(true);
-        })
-        .catch(function (err) {
             document.getElementById('error').className = '';
         })
       }
