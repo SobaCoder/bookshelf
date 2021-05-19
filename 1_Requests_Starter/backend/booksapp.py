@@ -34,9 +34,27 @@ def after_request(response):
   #         update the frontend to handle additional books in the styling and pagination
   #         Response body keys: 'success', 'books' and 'total_books'
   # TEST: When completed, the webpage will display books including title, author, and rating shown as stars
+def paginate_books(page, selection):
+  start = (page-1) * BOOKS_PER_SHELF
+  end = start + BOOKS_PER_SHELF
+  
+  books = [book.format() for book in selection]
+  current_books = books[start:end]
+  return current_books
+
+@app.route('/books/<page_id>')
+def show_books(page_id):
+    selection = Book.query.order_by('id').all()
+    page = request.args.get('page_id', 1, type=int)
+    current_books = paginate_books(page, selection)
+    if len(current_books) == 0:
+      abort(404)
+      
+    return render_template('index.html', books=current_books)
+
 @app.route('/')
 def all_books():
-    return render_template('index.html', books=Book.query.order_by('id').all())
+  return redirect(url_for('show_books', page_id=1))
 
 
 # @TODO: Write a route that will update a single book's rating. 
@@ -54,7 +72,17 @@ def all_books():
   #        Response body keys: 'success', 'books' and 'total_books'
 
   # TEST: When completed, you will be able to delete a single book by clicking on the trashcan.
-
+@app.route('/<book_id>/delete', methods=['DELETE'])
+def delete_book(book_id):
+  error = False
+  try:
+    book = Book.query.get(book_id)
+    book.delete()
+  except:
+    error = True
+  if error:
+    abort(500)
+  return jsonify({ 'success': True })
 
   # @TODO: Write a route that create a new book. 
   #        Response body keys: 'success', 'created'(id of created book), 'books' and 'total_books'

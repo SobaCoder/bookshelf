@@ -7,6 +7,13 @@
       .hidden {
         display: none;
       }
+      .clip-star {
+        background: gold;
+        clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        display: inline-block;
+        height: 10px;
+        width: 10px;
+      }
       ul {
         list-style: none;
         padding-left: 0;
@@ -55,58 +62,41 @@
           {% for book in books %}
           <table id="bookstable">
            <colgroup>
-            <col span="1" style="width: 5%;">
-            <col span="1" style="width: 70%;">
             <col span="1" style="width: 20%;">
-            <col span="1" style="width: 5%;">
+            <col span="1" style="width: 60%;">
+            <col span="1" style="width: 20%;">
+            <col span="1" style="width: 1%;">
             </colgroup>
             <tr>
-            <td><input data-id="{{ book.id }}" class="book-check-completed" type="checkbox" name="complete" id="complete" {% if book.completed %} checked {%endif%} /></td>
+            <td>
+            {% for n in range(book.rating) %}
+                <text class="clip-star"></text>
+            {% endfor %}
+            </td>
             <td>{{ book.title }}</td>
             <td>{{ book.author }}</td>
             <td><button class="delete-book" data-id="{{ book.id }}">&cross;</button></td>
+            </tr>
+            </table>
           {% endfor %}
+          <br/>
+          <a href = '/books/2'><button class ="next-page" type="submit">Next Page</button></a>
     </div>
 
     <script>
       let deleteBtns;
-      const todoCheckboxes = document.querySelectorAll('.book-check-completed');
-      for (let i = 0; i < todoCheckboxes.length; i++) {
-          const checkbox = todoCheckboxes[i];
-
-          checkbox.onchange = function (e) {
-              const newCompleted = e.target.checked;
-              const todoId = e.target.dataset.id;
-
-              fetch('/books/' + todoId + '/set-completed', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                      'completed': newCompleted
-                  }),
-                  headers: {
-                      'Content-Type': 'application/json'
-                  }
-              })
-              .then(function (jsonResponse) {
-                  document.getElementById('error').className = 'hidden';
-              })
-              .catch(function () {
-                  document.getElementById('error').className = '';
-              })
-          }
-      }
       deleteBtns = document.querySelectorAll(".delete-book");
       for (let i = 0; i < deleteBtns.length; i++) {
         const deleteBtn = deleteBtns[i];
         deleteBtn.onclick = function(e) {
           console.log("Delete event: ", e);
-          const todoId = e.target.dataset.id;
-          fetch('/books/'+ todoId + '/delete',{
+          const bookId = e.target.dataset.id;
+          fetch(bookId + '/delete',{
             method: 'DELETE'
           }).then(function() {
-            console.log('Parent?', e.target);
-            const item = e.target.parentElement;
-            item.remove();
+            const thecol = e.target.parentNode;
+            const therow = thecol.parentNode;
+            therow.parentNode.removeChild(therow);
               document.getElementById("error").className = "hidden";
             })
             .catch(function(e) {
