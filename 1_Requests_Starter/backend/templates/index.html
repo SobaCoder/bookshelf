@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="refresh" content="60">
+    <title>Todo App</title>
+    <style>
+      .hidden {
+        display: none;
+      }
+      ul {
+        list-style: none;
+        padding-left: 0;
+        width: 500px;
+      }
+      li {
+        clear: both;
+      }
+      li button {
+        -webkit-appearance: none;
+        border: none;
+        outline: none;
+        color: red;
+        float: right;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      table {
+            table-layout: auto ;
+            width: 600px ;
+      }
+      th,
+        td {
+        padding: 10px;
+        border: solid 1px;
+        text-align: left;
+      }
+      .lists-wrapper, .books-wrapper {
+        display: inline-block;
+        vertical-align: top;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="books-wrapper">      
+      <h4>BOOKS </h4>
+      <div id="error" class="hidden">
+        An error occurred, please try again.
+      </div>   
+        <ul id="books">
+          {% for book in books %}
+          <li>
+          <table>
+           <colgroup>
+            <col span="1" style="width: 5%;">
+            <col span="1" style="width: 70%;">
+            <col span="1" style="width: 20%;">
+            <col span="1" style="width: 5%;">
+            </colgroup>
+            <tr>
+            <td><input data-id="{{ book.id }}" class="book-check-completed" type="checkbox" name="complete" id="complete" {% if book.completed %} checked {%endif%} /></td>
+            <td>{{ book.title }}</td>
+            <td>{{ book.author }}</td>
+            <td><button class="delete-book" data-id="{{ book.id }}">&cross;</button></td>
+          </li>
+          {% endfor %}
+        </ul>
+            
+    </div>
+
+    <script>
+      let deleteBtns;
+      const todoCheckboxes = document.querySelectorAll('.book-check-completed');
+      for (let i = 0; i < todoCheckboxes.length; i++) {
+          const checkbox = todoCheckboxes[i];
+
+          checkbox.onchange = function (e) {
+              const newCompleted = e.target.checked;
+              const todoId = e.target.dataset.id;
+
+              fetch('/books/' + todoId + '/set-completed', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                      'completed': newCompleted
+                  }),
+                  headers: {
+                      'Content-Type': 'application/json'
+                  }
+              })
+              .then(function (jsonResponse) {
+                  document.getElementById('error').className = 'hidden';
+              })
+              .catch(function () {
+                  document.getElementById('error').className = '';
+              })
+          }
+      }
+      deleteBtns = document.querySelectorAll(".delete-book");
+      for (let i = 0; i < deleteBtns.length; i++) {
+        const deleteBtn = deleteBtns[i];
+        deleteBtn.onclick = function(e) {
+          console.log("Delete event: ", e);
+          const todoId = e.target.dataset.id;
+          fetch('/books/'+ todoId + '/delete',{
+            method: 'DELETE'
+          }).then(function() {
+            console.log('Parent?', e.target);
+            const item = e.target.parentElement;
+            item.remove();
+              document.getElementById("error").className = "hidden";
+            })
+            .catch(function(e) {
+              console.error(e);
+              document.getElementById("error").className = "";
+            });
+        };
+      }
+      deleteListBtns = document.querySelectorAll(".delete-list");
+      for (let i = 0; i < deleteListBtns.length; i++) {
+        const deleteBtn = deleteListBtns[i];
+        deleteBtn.onclick = function(e) {
+          console.log("Delete event: ", e);
+          const listId = e.target.dataset.id;
+
+          fetch('/lists/'+ listId + '/delete',{
+            method: 'DELETE'
+          }).then(function() {
+            console.log('Parent?', e.target);
+            const item = e.target.parentElement;
+            item.remove();
+              document.getElementById("error").className = "hidden";
+              window.location.reload(true);
+            })
+            .catch(function(e) {
+              console.error(e);
+              document.getElementById("error").className = "";
+            });
+        };
+      }
+      document.getElementById('book-form').onsubmit = function (e) {
+        e.preventDefault();
+        fetch('/books/create', {
+            method: 'POST',
+            body: JSON.stringify({
+                'description': document.getElementById('description').value,
+                'list_id': document.getElementById('list_id').value
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (jsonResponse) {
+            const liItem = document.createElement('LI');
+
+            liItem.innerHTML = jsonResponse['description'];
+            document.getElementById('books').appendChild(liItem);
+            document.getElementById('error').className = 'hidden';
+            window.location.reload(true);
+        })
+        .catch(function () {
+            document.getElementById('error').className = '';
+        })
+      }
+      document.getElementById('list-form').onsubmit = function (e) {
+        e.preventDefault();
+
+        fetch('/lists/create', {
+            method: 'POST',
+            body: JSON.stringify({
+                'name': document.getElementById('todolist-input').value
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (jsonResponse) {
+            const liItem = document.createElement('LI');
+
+            liItem.innerHTML = jsonResponse['name'];
+            document.getElementById('lists').appendChild(liItem);
+            document.getElementById('error').className = 'hidden';
+            window.location.reload(true);
+        })
+        .catch(function (err) {
+            document.getElementById('error').className = '';
+        })
+      }
+    </script>
+  </body>
+</html>
